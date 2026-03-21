@@ -154,6 +154,8 @@ function saveTarget() {
   movedAway = false;
   target = { lat: currentPos.lat, lon: currentPos.lon };
   localStorage.setItem('target', JSON.stringify(target));
+  distanceValue.textContent = '0';
+  distanceUnit.textContent = 'м';
   showArrow();
   updateArrow();
 }
