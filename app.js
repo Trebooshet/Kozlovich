@@ -100,7 +100,6 @@ function onOrientation(e) {
   lastCompassMs = Date.now();
   smoothHeading = smoothHeading === null ? h : lerpAngle(smoothHeading, h, 0.15);
   deviceHeading = smoothHeading;
-  compassRing.style.transform = `rotate(${-deviceHeading}deg)`;
 
   if (!compassReady) {
     compassReady = true;
@@ -210,7 +209,7 @@ function updateArrow() {
     let diff = targetAngle - smoothArrow;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
-    smoothArrow = smoothArrow + diff * 0.2;
+    smoothArrow = smoothArrow + diff * 0.5;
   }
 
   arrowWrap.style.transform = `rotate(${smoothArrow}deg)`;
