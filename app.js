@@ -50,23 +50,32 @@ function init() {
     target = JSON.parse(saved);
     showArrow();
   }
-  startGPS();
-  // На Android/desktop компас запускаем сразу
-  if (typeof DeviceOrientationEvent === 'undefined' ||
-    typeof DeviceOrientationEvent.requestPermission !== 'function') {
+
+  const needsPermission =
+    typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function';
+
+  if (needsPermission) {
+    screenCompass.classList.remove('hidden');
+  } else {
     startCompass();
+    startGPS();
   }
 }
 
-// ─── iOS PERMISSION — запрашиваем при нажатии кнопки ─────────────────────────
-function requestCompassIfNeeded() {
-  if (typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission()
-      .then(res => { if (res === 'granted') startCompass(); })
-      .catch(() => {});
-  }
-}
+// ─── iOS PERMISSION ───────────────────────────────────────────────────────────
+enableCompassBtn.addEventListener('click', () => {
+  DeviceOrientationEvent.requestPermission()
+    .then(res => {
+      screenCompass.classList.add('hidden');
+      if (res === 'granted') startCompass();
+      startGPS();
+    })
+    .catch(() => {
+      screenCompass.classList.add('hidden');
+      startGPS();
+    });
+});
 
 // ─── COMPASS ──────────────────────────────────────────────────────────────────
 function startCompass() {
@@ -129,7 +138,6 @@ function updateAccuracyUI(acc) {
 
 // ─── SET POINT ────────────────────────────────────────────────────────────────
 setPointBtn.addEventListener('click', () => {
-  requestCompassIfNeeded();
   if (!currentPos) {
     $('btn-text').textContent = 'Жду GPS...';
     navigator.geolocation.getCurrentPosition(pos => {
