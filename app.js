@@ -160,6 +160,7 @@ setPointBtn.addEventListener('click', () => {
 function saveTarget() {
   kalman.reset();
   movedAway = false;
+  smoothArrow = null;
   target = { lat: currentPos.lat, lon: currentPos.lon };
   localStorage.setItem('target', JSON.stringify(target));
   distanceValue.textContent = '0';
