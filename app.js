@@ -6,7 +6,7 @@ class KalmanFilter {
     if (this.variance < 0) {
       this.lat = lat; this.lon = lon; this.variance = v;
     } else {
-      this.variance += 3;
+      this.variance += 15; // быстрее реагирует на движение
       const k = this.variance / (this.variance + v);
       this.lat += k * (lat - this.lat);
       this.lon += k * (lon - this.lon);
@@ -123,7 +123,7 @@ function startGPS() {
   }, err => {
     console.error('GPS:', err);
     gpsStatusEl.classList.remove('active', 'warn');
-  }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 });
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
 }
 
 function updateAccuracyUI(acc) {
