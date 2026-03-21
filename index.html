@@ -13,95 +13,78 @@
 </head>
 <body>
 
-<div class="app">
+<!-- Весь UI — абсолютное позиционирование, ничто ничего не толкает -->
 
-  <!-- Экран разрешения компаса (только iOS) -->
-  <div id="screen-compass" class="screen hidden">
-    <div class="screen-icon">🧭</div>
-    <h2>Нужен доступ к компасу</h2>
-    <p>Для определения направления требуется разрешение на использование датчика ориентации</p>
-    <button id="enableCompass" class="btn-primary">Разрешить компас</button>
+<!-- Статус бар — сверху -->
+<div class="status-bar">
+  <div id="gps-status" class="status-dot">
+    <span class="dot"></span>
+    <span class="label">GPS</span>
   </div>
-
-  <!-- Главный экран -->
-  <div id="screen-main" class="screen">
-
-    <div class="status-bar">
-      <div id="gps-status" class="status-dot">
-        <span class="dot"></span>
-        <span class="label">GPS</span>
-      </div>
-      <div id="compass-status" class="status-dot">
-        <span class="dot"></span>
-        <span class="label">Компас</span>
-      </div>
-      <div id="accuracy-label">—</div>
-    </div>
-
-    <!-- Компас + стрелка -->
-    <div id="arrow-container" class="hidden">
-
-      <div id="compass-wrap">
-        <!-- Внешнее кольцо с румбами — вращается вместе с устройством (показывает север) -->
-        <div id="compass-ring">
-          <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
-            <!-- Круг -->
-            <circle cx="120" cy="120" r="115" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
-            <!-- Деления каждые 30° -->
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(30  120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(60  120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(90  120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(120 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(150 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(180 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(210 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(240 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(270 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(300 120 120)"/>
-            <line x1="120" y1="6"  x2="120" y2="18"  stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(330 120 120)"/>
-            <!-- Главные румбы -->
-            <text x="120" y="22" text-anchor="middle" fill="#ff4444" font-size="16" font-weight="800" font-family="sans-serif">N</text>
-            <text x="120" y="232" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-weight="600" font-family="sans-serif">S</text>
-            <text x="232" y="125" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-weight="600" font-family="sans-serif">E</text>
-            <text x="8"   y="125" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-weight="600" font-family="sans-serif">W</text>
-          </svg>
-        </div>
-
-        <!-- Стрелка — вращается отдельно (показывает на цель) -->
-        <div id="arrow-wrap">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <!-- Только наконечник — чистая белая стрелка вверх -->
-            <polygon points="50,6 65,52 50,44 35,52" fill="white"/>
-            <!-- Тело стрелки -->
-            <rect x="46" y="44" width="8" height="46" rx="4" fill="white"/>
-          </svg>
-        </div>
-      </div>
-
-      <div id="distance-display">
-        <span id="distance-value">0</span>
-        <span id="distance-unit">м</span>
-      </div>
-      <div id="coords-display"></div>
-    </div>
-
-    <!-- Нет точки -->
-    <div id="no-point">
-      <div class="no-point-icon">📍</div>
-      <p>Нажмите кнопку чтобы<br/>поставить точку</p>
-    </div>
-
-    <div class="controls">
-      <button id="setPoint" class="btn-primary">
-        <span id="btn-icon">📍</span>
-        <span id="btn-text">Поставить точку</span>
-      </button>
-      <button id="clearPoint" class="btn-secondary hidden">Сбросить точку</button>
-    </div>
-
+  <div id="compass-status" class="status-dot">
+    <span class="dot"></span>
+    <span class="label">Компас</span>
   </div>
-
+  <div id="accuracy-label">—</div>
 </div>
+
+<!-- Экран разрешения компаса — поверх всего на iOS -->
+<div id="screen-compass" class="overlay hidden">
+  <div class="screen-icon">🧭</div>
+  <h2>Нужен доступ к компасу</h2>
+  <p>Для определения направления требуется разрешение на использование датчика ориентации</p>
+  <button id="enableCompass" class="btn-primary">Разрешить компас</button>
+</div>
+
+<!-- Диал — строго по центру экрана -->
+<div class="dial-wrap" id="dial-wrap">
+  <!-- Кнопка поставить точку -->
+  <button id="setPoint" class="btn-set-point">
+    <span id="btn-text">Поставить<br/>точку</span>
+  </button>
+
+  <!-- Компас (скрыт пока нет точки) -->
+  <div id="compass-wrap" class="hidden">
+    <div id="compass-ring">
+      <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="120" cy="120" r="115" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(30  120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(60  120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(90  120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(120 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(150 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(180 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(210 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(240 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(270 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(300 120 120)"/>
+        <line x1="120" y1="6"  x2="120" y2="18" stroke="rgba(255,255,255,0.15)" stroke-width="1" transform="rotate(330 120 120)"/>
+        <text x="120" y="22" text-anchor="middle" fill="#ff4444" font-size="16" font-weight="800" font-family="sans-serif">N</text>
+        <text x="120" y="232" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-weight="600" font-family="sans-serif">S</text>
+        <text x="232" y="125" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-weight="600" font-family="sans-serif">E</text>
+        <text x="8"   y="125" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="13" font-weight="600" font-family="sans-serif">W</text>
+      </svg>
+    </div>
+    <div id="arrow-wrap">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,5 35,50 50,32" fill="rgba(255,255,255,1)"/>
+        <polygon points="50,5 65,50 50,32" fill="rgba(200,200,200,0.85)"/>
+        <polygon points="50,95 35,50 50,68" fill="rgba(255,255,255,0.18)"/>
+        <polygon points="50,95 65,50 50,68" fill="rgba(255,255,255,0.12)"/>
+        <circle cx="50" cy="50" r="3" fill="rgba(255,255,255,0.4)"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- Дистанция — фиксировано ПОД диалом, не двигает его -->
+<div class="distance-wrap hidden" id="distance-wrap">
+  <span id="distance-value">0</span>
+  <span id="distance-unit">м</span>
+</div>
+
+<!-- Кнопка сброса — фиксировано снизу -->
+<button id="clearPoint" class="btn-clear hidden">Сбросить точку</button>
 
 <script src="app.js"></script>
 </body>

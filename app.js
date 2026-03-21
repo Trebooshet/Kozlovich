@@ -1,7 +1,6 @@
 // ─── KALMAN FILTER ────────────────────────────────────────────────────────────
 class KalmanFilter {
   constructor() { this.lat = null; this.lon = null; this.variance = -1; }
-
   process(lat, lon, accuracy) {
     const v = Math.max(accuracy, 3) ** 2;
     if (this.variance < 0) {
@@ -15,43 +14,42 @@ class KalmanFilter {
     }
     return { lat: this.lat, lon: this.lon };
   }
-
   reset() { this.lat = null; this.lon = null; this.variance = -1; }
 }
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let target        = null;
 let currentPos    = null;
-let deviceHeading = 0;       // сглаженный heading (куда смотрит телефон от севера)
-let smoothHeading = null;    // для lerp
-let smoothArrow   = null;    // сглаженный угол стрелки на цель
+let deviceHeading = 0;
+let smoothHeading = null;
+let smoothArrow   = null;
 let compassReady  = false;
-let gpsReady      = false;
 let lastCompassMs = 0;
 const kalman      = new KalmanFilter();
 
 // ─── DOM ──────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const screenCompass    = $('screen-compass');
-const screenMain       = $('screen-main');
-const enableCompassBtn = $('enableCompass');
-const setPointBtn      = $('setPoint');
-const clearPointBtn    = $('clearPoint');
-const compassRing      = $('compass-ring');   // вращающееся кольцо
-const arrowWrap        = $('arrow-wrap');     // стрелка на цель
-const arrowContainer   = $('arrow-container');
-const noPoint          = $('no-point');
-const distanceValue    = $('distance-value');
-const distanceUnit     = $('distance-unit');
-const coordsDisplay    = $('coords-display');
-const gpsStatusEl      = $('gps-status');
-const compassStatusEl  = $('compass-status');
-const accuracyLabel    = $('accuracy-label');
+const screenCompass   = $('screen-compass');
+const enableCompassBtn= $('enableCompass');
+const setPointBtn     = $('setPoint');
+const clearPointBtn   = $('clearPoint');
+const compassRing     = $('compass-ring');
+const arrowWrap       = $('arrow-wrap');
+const compassWrap     = $('compass-wrap');
+const distanceWrap    = $('distance-wrap');
+const distanceValue   = $('distance-value');
+const distanceUnit    = $('distance-unit');
+const gpsStatusEl     = $('gps-status');
+const compassStatusEl = $('compass-status');
+const accuracyLabel   = $('accuracy-label');
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 function init() {
   const saved = localStorage.getItem('target');
-  if (saved) { target = JSON.parse(saved); showArrow(); }
+  if (saved) {
+    target = JSON.parse(saved);
+    showArrow();
+  }
 
   const needsPermission =
     typeof DeviceOrientationEvent !== 'undefined' &&
@@ -59,10 +57,7 @@ function init() {
 
   if (needsPermission) {
     screenCompass.classList.remove('hidden');
-    screenMain.classList.add('hidden');
   } else {
-    screenCompass.classList.add('hidden');
-    screenMain.classList.remove('hidden');
     startCompass();
     startGPS();
   }
@@ -73,13 +68,11 @@ enableCompassBtn.addEventListener('click', () => {
   DeviceOrientationEvent.requestPermission()
     .then(res => {
       screenCompass.classList.add('hidden');
-      screenMain.classList.remove('hidden');
       if (res === 'granted') startCompass();
       startGPS();
     })
     .catch(() => {
       screenCompass.classList.add('hidden');
-      screenMain.classList.remove('hidden');
       startGPS();
     });
 });
@@ -90,58 +83,39 @@ function startCompass() {
   window.addEventListener('deviceorientation', onOrientation, true);
 }
 
+function lerpAngle(cur, tgt, f) {
+  let d = tgt - cur;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  return (cur + d * f + 360) % 360;
+}
+
 function onOrientation(e) {
   let h = null;
-
-  // iOS — webkitCompassHeading: угол от магнитного севера (0=север, растёт по часовой)
-  if (e.webkitCompassHeading != null) {
-    h = e.webkitCompassHeading;
-  }
-  // Android absolute
-  else if (e.absolute && e.alpha != null) {
-    h = (360 - e.alpha) % 360; // alpha растёт против часовой → инвертируем
-  }
-  // Fallback
-  else if (e.alpha != null) {
-    h = (360 - e.alpha) % 360;
-  }
-
+  if (e.webkitCompassHeading != null)       h = e.webkitCompassHeading;
+  else if (e.absolute && e.alpha != null)   h = (360 - e.alpha) % 360;
+  else if (e.alpha != null)                 h = (360 - e.alpha) % 360;
   if (h === null) return;
+
   lastCompassMs = Date.now();
-
-  // Lerp с нормализацией 359→0
-  if (smoothHeading === null) {
-    smoothHeading = h;
-  } else {
-    let d = h - smoothHeading;
-    if (d > 180) d -= 360;
-    if (d < -180) d += 360;
-    smoothHeading = (smoothHeading + d * 0.15 + 360) % 360;
-  }
+  smoothHeading = smoothHeading === null ? h : lerpAngle(smoothHeading, h, 0.15);
   deviceHeading = smoothHeading;
-
-  // Кольцо вращается так, чтобы N всегда смотрел на север:
-  // если телефон повёрнут на H градусов от севера → кольцо крутим на -H
   compassRing.style.transform = `rotate(${-deviceHeading}deg)`;
 
   if (!compassReady) {
     compassReady = true;
     compassStatusEl.classList.add('active');
   }
-
   updateArrow();
 }
 
 // ─── GPS ──────────────────────────────────────────────────────────────────────
 function startGPS() {
   if (!navigator.geolocation) { alert('Геолокация не поддерживается'); return; }
-
   navigator.geolocation.watchPosition(pos => {
     const acc = pos.coords.accuracy;
     const f   = kalman.process(pos.coords.latitude, pos.coords.longitude, acc);
     currentPos = { lat: f.lat, lon: f.lon, accuracy: acc };
-
-    if (!gpsReady) { gpsReady = true; }
     updateAccuracyUI(acc);
     updateArrow();
   }, err => {
@@ -167,7 +141,7 @@ setPointBtn.addEventListener('click', () => {
       currentPos = { lat: f.lat, lon: f.lon, accuracy: pos.coords.accuracy };
       saveTarget();
     }, () => {
-      $('btn-text').textContent = 'Поставить точку';
+      $('btn-text').innerHTML = 'Поставить<br/>точку';
       alert('Не удалось получить GPS');
     }, { enableHighAccuracy: true, timeout: 10000 });
     return;
@@ -179,7 +153,6 @@ function saveTarget() {
   kalman.reset();
   target = { lat: currentPos.lat, lon: currentPos.lon };
   localStorage.setItem('target', JSON.stringify(target));
-  $('btn-text').textContent = 'Обновить точку';
   showArrow();
   updateArrow();
 }
@@ -188,16 +161,18 @@ function saveTarget() {
 clearPointBtn.addEventListener('click', () => {
   target = null;
   localStorage.removeItem('target');
-  arrowContainer.classList.add('hidden');
-  noPoint.classList.remove('hidden');
+  setPointBtn.classList.remove('hidden');
+  compassWrap.classList.add('hidden');
+  distanceWrap.classList.add('hidden');
   clearPointBtn.classList.add('hidden');
-  $('btn-text').textContent = 'Поставить точку';
+  $('btn-text').innerHTML = 'Поставить<br/>точку';
 });
 
 // ─── SHOW ARROW ───────────────────────────────────────────────────────────────
 function showArrow() {
-  arrowContainer.classList.remove('hidden');
-  noPoint.classList.add('hidden');
+  setPointBtn.classList.add('hidden');
+  compassWrap.classList.remove('hidden');
+  distanceWrap.classList.remove('hidden');
   clearPointBtn.classList.remove('hidden');
 }
 
@@ -208,18 +183,15 @@ function updateArrow() {
   const dist = getDistance(currentPos.lat, currentPos.lon, target.lat, target.lon);
   const acc  = currentPos.accuracy || 20;
 
-  // Расстояние меньше погрешности GPS — ненадёжно
   if (dist < acc * 0.7) {
     distanceValue.textContent = '~0';
     distanceUnit.textContent  = 'м';
-    coordsDisplay.textContent = `⚠️ Вы в радиусе погрешности ±${Math.round(acc)}м`;
     arrowWrap.style.opacity   = '0.25';
     return;
   }
 
   arrowWrap.style.opacity = '1';
 
-  // Дистанция
   if (dist >= 1000) {
     distanceValue.textContent = (dist / 1000).toFixed(1);
     distanceUnit.textContent  = 'км';
@@ -228,33 +200,15 @@ function updateArrow() {
     distanceUnit.textContent  = 'м';
   }
 
-  coordsDisplay.textContent = `📍 ${target.lat.toFixed(5)}, ${target.lon.toFixed(5)}  ±${Math.round(acc)}м`;
-
   if (dist < 5) { showArrived(); return; }
 
-  // Азимут на цель (от севера, по часовой)
-  const bearing = getBearing(currentPos.lat, currentPos.lon, target.lat, target.lon);
-
-  // Стрелка должна показывать на цель относительно экрана:
-  // bearing — куда цель от севера
-  // deviceHeading — куда смотрит верх телефона от севера
-  // угол стрелки = bearing - deviceHeading
+  const bearing     = getBearing(currentPos.lat, currentPos.lon, target.lat, target.lon);
   const targetAngle = bearing - deviceHeading;
-
-  // Lerp сглаживание
-  if (smoothArrow === null) {
-    smoothArrow = targetAngle;
-  } else {
-    let d = targetAngle - smoothArrow;
-    if (d > 180) d -= 360;
-    if (d < -180) d += 360;
-    smoothArrow += d * 0.2;
-  }
-
+  smoothArrow = smoothArrow === null ? targetAngle : lerpAngle(smoothArrow, targetAngle, 0.2);
   arrowWrap.style.transform = `rotate(${smoothArrow}deg)`;
 }
 
-// ─── RAF — следим за свежестью компаса ───────────────────────────────────────
+// ─── RAF ──────────────────────────────────────────────────────────────────────
 ;(function loop() {
   if (compassReady && Date.now() - lastCompassMs > 3000) {
     compassStatusEl.classList.remove('active');
