@@ -7,7 +7,7 @@
 
 :root {
   --bg: #0a0a0f;
-  --accent: #00e5ff;
+  --accent: #fff;
   --text: #ffffff;
   --text-dim: rgba(255,255,255,0.4);
   --green: #00e676;
@@ -111,7 +111,7 @@ html, body {
 /* ── ДИСТАНЦИЯ — фиксировано под диалом, не двигает его ── */
 .distance-wrap {
   position: fixed;
-  bottom: calc(50% + 160px);
+  bottom: calc(50% + 220px);
   left: 0; right: 0;
   text-align: center;
   line-height: 1;

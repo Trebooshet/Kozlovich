@@ -152,6 +152,7 @@ setPointBtn.addEventListener('click', () => {
 
 function saveTarget() {
   kalman.reset();
+  movedAway = false;
   target = { lat: currentPos.lat, lon: currentPos.lon };
   localStorage.setItem('target', JSON.stringify(target));
   showArrow();
@@ -177,6 +178,8 @@ function showArrow() {
   clearPointBtn.classList.remove('hidden');
 }
 
+let movedAway = false;
+
 // ─── UPDATE ARROW ─────────────────────────────────────────────────────────────
 function updateArrow() {
   if (!target || !currentPos) return;
@@ -184,21 +187,23 @@ function updateArrow() {
   const dist = getDistance(currentPos.lat, currentPos.lon, target.lat, target.lon);
   const acc  = currentPos.accuracy || 20;
 
-  if (dist < acc * 0.7) {
-    distanceValue.textContent = '~0';
-    distanceUnit.textContent  = 'м';
-    arrowWrap.style.opacity   = '0.5';
-  } else if (dist >= 1000) {
+  // Считаем что отошли если дистанция > 20м
+  if (dist > 20) movedAway = true;
+
+  if (dist < 5 || dist < acc * 0.7) {
+    if (movedAway) showArrived();
+    return;
+  }
+
+  arrowWrap.style.opacity = '1';
+
+  if (dist >= 1000) {
     distanceValue.textContent = (dist / 1000).toFixed(1);
     distanceUnit.textContent  = 'км';
-    arrowWrap.style.opacity   = '1';
   } else {
     distanceValue.textContent = Math.round(dist);
     distanceUnit.textContent  = 'м';
-    arrowWrap.style.opacity   = '1';
   }
-
-  if (dist < 5) { showArrived(); return; }
 
   const bearing     = getBearing(currentPos.lat, currentPos.lon, target.lat, target.lon);
   const targetAngle = bearing - deviceHeading;
