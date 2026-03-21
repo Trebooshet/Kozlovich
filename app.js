@@ -236,7 +236,7 @@ function showArrived() {
   arrivedShown = true;
   const el = document.createElement('div');
   el.className = 'arrived-overlay';
-  el.innerHTML = '<div class="arrived-text">✅ Вы на месте!</div>';
+  el.innerHTML = '<div class="arrived-text">Вы на месте!</div>';
   document.body.appendChild(el);
   setTimeout(() => el.classList.add('show'), 50);
   setTimeout(() => {
