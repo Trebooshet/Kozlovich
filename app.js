@@ -106,6 +106,7 @@ function onOrientation(e) {
     compassReady = true;
     compassStatusEl.classList.add('active');
   }
+
   updateArrow();
 }
 
@@ -116,12 +117,13 @@ function startGPS() {
     const acc = pos.coords.accuracy;
     const f   = kalman.process(pos.coords.latitude, pos.coords.longitude, acc);
     currentPos = { lat: f.lat, lon: f.lon, accuracy: acc };
+    gpsStatusEl.classList.add('active');
     updateAccuracyUI(acc);
     updateArrow();
   }, err => {
     console.error('GPS:', err);
     gpsStatusEl.classList.remove('active', 'warn');
-  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+  }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 30000 });
 }
 
 function updateAccuracyUI(acc) {
@@ -186,25 +188,31 @@ function updateArrow() {
   if (dist < acc * 0.7) {
     distanceValue.textContent = '~0';
     distanceUnit.textContent  = 'м';
-    arrowWrap.style.opacity   = '0.25';
-    return;
-  }
-
-  arrowWrap.style.opacity = '1';
-
-  if (dist >= 1000) {
+    arrowWrap.style.opacity   = '0.5';
+  } else if (dist >= 1000) {
     distanceValue.textContent = (dist / 1000).toFixed(1);
     distanceUnit.textContent  = 'км';
+    arrowWrap.style.opacity   = '1';
   } else {
     distanceValue.textContent = Math.round(dist);
     distanceUnit.textContent  = 'м';
+    arrowWrap.style.opacity   = '1';
   }
 
   if (dist < 5) { showArrived(); return; }
 
   const bearing     = getBearing(currentPos.lat, currentPos.lon, target.lat, target.lon);
   const targetAngle = bearing - deviceHeading;
-  smoothArrow = smoothArrow === null ? targetAngle : lerpAngle(smoothArrow, targetAngle, 0.2);
+
+  if (smoothArrow === null) {
+    smoothArrow = targetAngle;
+  } else {
+    let diff = targetAngle - smoothArrow;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    smoothArrow = smoothArrow + diff * 0.2;
+  }
+
   arrowWrap.style.transform = `rotate(${smoothArrow}deg)`;
 }
 
