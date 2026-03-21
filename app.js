@@ -50,32 +50,23 @@ function init() {
     target = JSON.parse(saved);
     showArrow();
   }
-
-  const needsPermission =
-    typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission === 'function';
-
-  if (needsPermission) {
-    screenCompass.classList.remove('hidden');
-  } else {
+  startGPS();
+  // На Android/desktop компас запускаем сразу
+  if (typeof DeviceOrientationEvent === 'undefined' ||
+    typeof DeviceOrientationEvent.requestPermission !== 'function') {
     startCompass();
-    startGPS();
   }
 }
 
-// ─── iOS PERMISSION ───────────────────────────────────────────────────────────
-enableCompassBtn.addEventListener('click', () => {
-  DeviceOrientationEvent.requestPermission()
-    .then(res => {
-      screenCompass.classList.add('hidden');
-      if (res === 'granted') startCompass();
-      startGPS();
-    })
-    .catch(() => {
-      screenCompass.classList.add('hidden');
-      startGPS();
-    });
-});
+// ─── iOS PERMISSION — запрашиваем при нажатии кнопки ─────────────────────────
+function requestCompassIfNeeded() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(res => { if (res === 'granted') startCompass(); })
+      .catch(() => {});
+  }
+}
 
 // ─── COMPASS ──────────────────────────────────────────────────────────────────
 function startCompass() {
@@ -121,8 +112,11 @@ function startGPS() {
     updateArrow();
   }, err => {
     console.error('GPS:', err);
+    if (err.code === 1) {
+      accuracyLabel.textContent = 'нет доступа';
+    }
     gpsStatusEl.classList.remove('active', 'warn');
-  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 60000 });
 }
 
 function updateAccuracyUI(acc) {
@@ -135,16 +129,21 @@ function updateAccuracyUI(acc) {
 
 // ─── SET POINT ────────────────────────────────────────────────────────────────
 setPointBtn.addEventListener('click', () => {
+  requestCompassIfNeeded();
   if (!currentPos) {
     $('btn-text').textContent = 'Жду GPS...';
     navigator.geolocation.getCurrentPosition(pos => {
       const f = kalman.process(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
       currentPos = { lat: f.lat, lon: f.lon, accuracy: pos.coords.accuracy };
       saveTarget();
-    }, () => {
+    }, (err) => {
       $('btn-text').innerHTML = 'Поставить<br/>точку';
-      alert('Не удалось получить GPS');
-    }, { enableHighAccuracy: true, timeout: 10000 });
+      if (err.code === 1) {
+        alert('Разрешите доступ к геолокации:\nНастройки → Конфиденциальность → Службы геолокации → Safari/Kozlovich → При использовании');
+      } else {
+        alert('GPS недоступен. Выйдите на улицу и попробуйте снова.');
+      }
+    }, { enableHighAccuracy: true, timeout: 15000 });
     return;
   }
   saveTarget();
@@ -236,7 +235,7 @@ function showArrived() {
   arrivedShown = true;
   const el = document.createElement('div');
   el.className = 'arrived-overlay';
-  el.innerHTML = '<div class="arrived-text">Вы на месте!</div>';
+  el.innerHTML = '<div class="arrived-text">✅ Вы на месте!</div>';
   document.body.appendChild(el);
   setTimeout(() => el.classList.add('show'), 50);
   setTimeout(() => {
