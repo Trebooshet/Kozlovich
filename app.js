@@ -222,9 +222,9 @@ function updateArrow() {
     smoothArrow = targetAngle;
   } else {
     let diff = targetAngle - smoothArrow;
-    if (diff > 180) diff -= 360;
-    if (diff < -180) diff += 360;
-    smoothArrow = smoothArrow + diff * 0.5;
+    // Нормализуем в [-180, 180] — исключаем прыжок через 0/360
+    diff = diff - Math.round(diff / 360) * 360;
+    smoothArrow = smoothArrow + diff * 0.3;
   }
 
   arrowWrap.style.transform = `rotate(${smoothArrow}deg)`;
