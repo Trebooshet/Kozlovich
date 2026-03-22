@@ -28,14 +28,6 @@
   <div id="accuracy-label">—</div>
 </div>
 
-<!-- Экран разрешения компаса — поверх всего на iOS -->
-<div id="screen-compass" class="overlay hidden">
-  <div class="screen-icon">🧭</div>
-  <h2>Нужен доступ к компасу</h2>
-  <p>Для определения направления требуется разрешение на использование датчика ориентации</p>
-  <button id="enableCompass" class="btn-primary">Разрешить компас</button>
-</div>
-
 <!-- Диал — строго по центру экрана -->
 <div class="dial-wrap" id="dial-wrap">
   <!-- Кнопка поставить точку -->
@@ -52,10 +44,8 @@
     </div>
     <div id="arrow-wrap">
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <!-- Левая грань наконечника — белая -->
-        <polygon points="50,0 30,70 50,50" fill="white"/>
-        <polygon points="50,0 70,70 50,50" fill="rgba(180,180,180,0.95)"/>
-
+        <polygon points="50,5 30,60 50,50" fill="white"/>
+        <polygon points="50,5 70,60 50,50" fill="rgba(180,180,180,0.95)"/>
       </svg>
     </div>
   </div>

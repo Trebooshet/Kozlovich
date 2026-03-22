@@ -50,32 +50,22 @@ function init() {
     target = JSON.parse(saved);
     showArrow();
   }
-
-  const needsPermission =
-    typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission === 'function';
-
-  if (needsPermission) {
-    screenCompass.classList.remove('hidden');
-  } else {
+  startGPS();
+  if (typeof DeviceOrientationEvent === 'undefined' ||
+    typeof DeviceOrientationEvent.requestPermission !== 'function') {
     startCompass();
-    startGPS();
   }
 }
 
-// ─── iOS PERMISSION ───────────────────────────────────────────────────────────
-enableCompassBtn.addEventListener('click', () => {
-  DeviceOrientationEvent.requestPermission()
-    .then(res => {
-      screenCompass.classList.add('hidden');
-      if (res === 'granted') startCompass();
-      startGPS();
-    })
-    .catch(() => {
-      screenCompass.classList.add('hidden');
-      startGPS();
-    });
-});
+// ─── iOS PERMISSION — запрашиваем при нажатии кнопки ─────────────────────────
+function requestCompassIfNeeded() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(res => { if (res === 'granted') startCompass(); })
+      .catch(() => {});
+  }
+}
 
 // ─── COMPASS ──────────────────────────────────────────────────────────────────
 function startCompass() {
@@ -138,6 +128,7 @@ function updateAccuracyUI(acc) {
 
 // ─── SET POINT ────────────────────────────────────────────────────────────────
 setPointBtn.addEventListener('click', () => {
+  requestCompassIfNeeded();
   if (!currentPos) {
     $('btn-text').textContent = 'Жду GPS...';
     navigator.geolocation.getCurrentPosition(pos => {
@@ -246,7 +237,7 @@ function showArrived() {
   arrivedShown = true;
   const el = document.createElement('div');
   el.className = 'arrived-overlay';
-  el.innerHTML = '<div class="arrived-text">✅ Вы на месте!</div>';
+  el.innerHTML = '<div class="arrived-text">Вы на месте!</div>';
   document.body.appendChild(el);
   setTimeout(() => el.classList.add('show'), 50);
   setTimeout(() => {
