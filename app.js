@@ -51,19 +51,14 @@ function init() {
     showArrow();
   }
   startGPS();
-  if (typeof DeviceOrientationEvent === 'undefined' ||
-    typeof DeviceOrientationEvent.requestPermission !== 'function') {
-    startCompass();
-  }
-}
-
-// ─── iOS PERMISSION — запрашиваем при нажатии кнопки ─────────────────────────
-function requestCompassIfNeeded() {
   if (typeof DeviceOrientationEvent !== 'undefined' &&
     typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // iOS — запрашиваем сразу при старте
     DeviceOrientationEvent.requestPermission()
       .then(res => { if (res === 'granted') startCompass(); })
       .catch(() => {});
+  } else {
+    startCompass();
   }
 }
 
@@ -128,7 +123,6 @@ function updateAccuracyUI(acc) {
 
 // ─── SET POINT ────────────────────────────────────────────────────────────────
 setPointBtn.addEventListener('click', () => {
-  requestCompassIfNeeded();
   if (!currentPos) {
     $('btn-text').textContent = 'Жду GPS...';
     navigator.geolocation.getCurrentPosition(pos => {
