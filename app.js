@@ -61,7 +61,8 @@ function init() {
 
 function showCompassBanner() {
   const banner = document.createElement('button');
-  banner.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:transparent;border:none;cursor:pointer;z-index:200;';
+  banner.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:transparent;border:none;cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;';
+  banner.innerHTML = '<span style="color:rgba(255,255,255,0.3);font-size:18px;font-family:sans-serif;letter-spacing:0.1em;">Тапни</span>';
   banner.addEventListener('click', () => {
     banner.remove();
     DeviceOrientationEvent.requestPermission()
