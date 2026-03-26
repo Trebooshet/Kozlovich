@@ -6,7 +6,7 @@ self.addEventListener('fetch', e => {
     fetch(e.request)
       .then(response => {
         const clone = response.clone();
-        caches.open('kozlovich').then(cache => cache.put(e.request, clone));
+        caches.open('kozlovich-2').then(cache => cache.put(e.request, clone));
         return response;
       })
       .catch(() => caches.match(e.request))

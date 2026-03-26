@@ -76,6 +76,7 @@ function showCompassBanner() {
   document.body.appendChild(banner);
 }
 
+
 // ─── COMPASS ──────────────────────────────────────────────────────────────────
 function startCompass() {
   window.addEventListener('deviceorientationabsolute', onOrientation, true);
