@@ -6,7 +6,7 @@ class KalmanFilter {
     if (this.variance < 0) {
       this.lat = lat; this.lon = lon; this.variance = v;
     } else {
-      this.variance += 15;
+      this.variance += 15; // быстрее реагирует на движение
       const k = this.variance / (this.variance + v);
       this.lat += k * (lat - this.lat);
       this.lon += k * (lon - this.lon);
@@ -60,29 +60,15 @@ function init() {
 }
 
 function showCompassBanner() {
-  // Проверяем текущее состояние разрешения
-  DeviceOrientationEvent.requestPermission()
-    .then(res => {
-      if (res === 'granted') {
-        // Разрешение уже есть — просто запускаем
-        startCompass();
-      } else {
-        // Нет разрешения — показываем баннер для тапа
-        const banner = document.createElement('button');
-        banner.style.cssText = `
-          position: fixed; inset: 0; width: 100%; height: 100%;
-          background: transparent; border: none; cursor: pointer; z-index: 200;
-        `;
-        banner.addEventListener('click', () => {
-          DeviceOrientationEvent.requestPermission()
-            .then(r => { if (r === 'granted') startCompass(); })
-            .catch(() => {});
-          banner.remove();
-        }, { once: true });
-        document.body.appendChild(banner);
-      }
-    })
-    .catch(() => startCompass());
+  const banner = document.createElement('button');
+  banner.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;background:transparent;border:none;cursor:pointer;z-index:200;';
+  banner.addEventListener('click', () => {
+    banner.remove();
+    DeviceOrientationEvent.requestPermission()
+      .then(res => { if (res === 'granted') startCompass(); })
+      .catch(() => {});
+  }, { once: true });
+  document.body.appendChild(banner);
 }
 
 // ─── COMPASS ──────────────────────────────────────────────────────────────────
@@ -155,7 +141,7 @@ setPointBtn.addEventListener('click', () => {
     }, (err) => {
       $('btn-text').innerHTML = 'Поставить<br/>точку';
       if (err.code === 1) {
-        alert('Разрешите доступ к геолокации:\nНастройки → Конфиденциальность → Службы геолокации → Safari → При использовании');
+        alert('Разрешите доступ к геолокации:\nНастройки → Конфиденциальность → Службы геолокации → Safari/Kozlovich → При использовании');
       } else {
         alert('GPS недоступен. Выйдите на улицу и попробуйте снова.');
       }
@@ -230,6 +216,7 @@ function updateArrow() {
     smoothArrow = targetAngle;
   } else {
     let diff = targetAngle - smoothArrow;
+    // Нормализуем в [-180, 180] — исключаем прыжок через 0/360
     diff = diff - Math.round(diff / 360) * 360;
     smoothArrow = smoothArrow + diff * 0.3;
   }
