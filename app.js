@@ -66,7 +66,7 @@ function showCompassBanner() {
     background: #0a0a0f; border: none; cursor: pointer; z-index: 200;
     display: flex; align-items: center; justify-content: center;
   `;
-  banner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:18px;font-family:sans-serif;letter-spacing:0.1em;">Тапни</span>';
+  banner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:48px;font-family:sans-serif;letter-spacing:0.1em;">Тапни</span>';
   banner.addEventListener('click', () => {
     banner.remove();
     DeviceOrientationEvent.requestPermission()
